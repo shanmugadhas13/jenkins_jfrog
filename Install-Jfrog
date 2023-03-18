@@ -1,0 +1,40 @@
+#Commands to install jFrog
+
+sudo yum install docker
+sudo usermod -a -G docker ec2-user
+sudo service docker start
+
+sudo docker pull docker.bintray.io/jfrog/artifactory-oss:latest
+sudo docker images
+
+sudo mkdir -p /jfrog/artifactory
+sudo chown -R 1030 /jfrog/
+
+sudo docker run --name artifactory -d -p 8081:8081 -p 8082:8082 -v /jfrog/artifactory:/var/opt/jfrog/artifactory docker.bintray.io/jfrog/artifactory-oss:latest
+sudo docker ps
+
+#content below -->
+sudo vi /etc/systemd/system/artifactory.service
+
+sudo systemctl daemon-reload
+sudo systemctl start artifactory
+sudo systemctl status artifactory
+
+
+#/etc/systemd/system/artifactory.service
+************************************************
+[Unit]
+Description=Setup Systemd script for Artifactory Container
+After=network.target
+[Service]
+Restart=always
+ExecStartPre=-/usr/bin/docker kill artifactory
+ExecStartPre=-/usr/bin/docker rm artifactory
+ExecStart=/usr/bin/docker run --name artifactory -p 8081:8081 -p 8082:8082 \
+  -v /jfrog/artifactory:/var/opt/jfrog/artifactory \
+  docker.bintray.io/jfrog/artifactory-oss:latest
+ExecStop=-/usr/bin/docker kill artifactory
+ExecStop=-/usr/bin/docker rm artifactory
+[Install]
+WantedBy=multi-user.target
+************************************************
