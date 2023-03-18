@@ -1,0 +1,42 @@
+pipeline {
+    agent {
+        label 'agent1'
+    }
+    triggers {
+        cron('* * * * *')
+    }
+    environment {
+        buildNumber = "${env.BUILD_NUMBER}"   
+    }
+    stages {
+        stage('Get System Metrics') {
+            steps {
+                script {
+                    sh "touch /tmp/workspace/test1/metric-${buildNumber}.txt"
+                    sh "whoami >> /tmp/workspace/test1/metric-${buildNumber}.txt"
+                    sh "free -m >> /tmp/workspace/test1/metric-${buildNumber}.txt"
+                    sh "uptime >> /tmp/workspace/test1/metric-${buildNumber}.txt"
+                    sh "uname -a >> /tmp/workspace/test1/metric-${buildNumber}.txt"
+                    sh "hostname >> /tmp/workspace/test1/metric-${buildNumber}.txt"
+                    sh "top -bn1 >> /tmp/workspace/test1/metric-${buildNumber}.txt"
+                    sh "vmstat 1 10 >> /tmp/workspace/test1/metric-${buildNumber}.txt"
+                    sh "iostat -m >> /tmp/workspace/test1/metric-${buildNumber}.txt"
+                }
+            }
+        }
+        stage ('Upload to Jfrog'){
+            steps {
+                script{
+                    sh "curl -ujenkin:cmVmdGtuOjAxOjE3MTA2OTAzMjk6Mk02UUhUYmpTeE96SDl4MWtJejZMRHg4SVFl -T /tmp/workspace/test1/metric-${buildNumber}.txt \"http://54.90.211.197:8081/artifactory/test-repo1//tmp/workspace/test1/metric-${buildNumber}.txt\""
+                }
+            }
+        }
+        stage ('Cleanup'){
+            steps {
+                script {
+                    sh "rm -f /tmp/workspace/test1/metric-${buildNumber}.txt"
+                }
+            }
+        }
+    }
+}
